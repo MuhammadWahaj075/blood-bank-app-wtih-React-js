@@ -46,3 +46,6 @@
   box-shadow: #d6d6e7 0 3px 7px inset;
   transform: translateY(2px);
 }
+.validate-error {
+  color: #d8363a;
+}

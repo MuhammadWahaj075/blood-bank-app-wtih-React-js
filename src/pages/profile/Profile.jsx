@@ -44,58 +44,92 @@ import {
   where,
 } from "firebase/firestore";
 import Swal from "sweetalert2";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { useForm } from "react-hook-form";
+
+const schema = yup.object({
+  name: yup.string().required(),
+  // : yup.string().required(),
+  age: yup
+    .number()
+    .required("Age is required")
+    .min(18, "you must be at least 18 years old")
+    .max(99),
+  number: yup
+    .string()
+    .required()
+    .matches(
+      /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[)]?[-\s\.]?[0-9]{4,6}$/,
+      "Contact is not valid!."
+    ),
+  bloodType: yup.string().required("Blood type is a required field"),
+  city: yup.string().required("city is a required field"),
+  available: yup.bool().required(),
+});
 
 const theme = createTheme();
 export default function Profile() {
   const [skeleton, setSkeleton] = useState(false);
   const [file, setFile] = useState([]);
-  console.log("🚀 ~ file: Home.jsx:18 ~ Home ~ file", file);
-  // const navigate = useNavigate();
-  const [availables, setAvailable] = useState(false);
-  console.log("🚀 ~ file: Profile.jsx:47 ~ Profile ~ availables:", availables);
+  const [userName, setUserName] = useState("");
+  // console.log("🚀 ~ file: Home.jsx:18 ~ Home ~ file", file);
+  const navigate = useNavigate();
+  // const [available, setAvailable] = useState(false);
+  // console.log("🚀 ~ file: Profile.jsx:47 ~ Profile ~ availables:", available);
 
-  const [value, setValue] = useState({
-    name: "",
-    age: "",
-    gender: "",
-    bloodType: "",
-    city: "",
-    number: "",
-    available: false,
+  // const [value, setValue] = useState({
+  //   name: "",
+  //   age: "",
+  //   gender: "Male",
+  //   bloodType: "",
+  //   city: "",
+  //   number: "",
+  //   available: false,
+  // });
+
+  // console.log("value", value);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      name: "",
+      age: "",
+      gender: "Male",
+      bloodType: "",
+      city: "",
+      number: "",
+      available: false,
+    },
+
+    resolver: yupResolver(schema),
   });
-
-  console.log("value", value);
-
+  console.log(errors);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (data) => {
+    console.log(data, "data======");
     const q = query(
       collection(db, "Profile"),
-      where("number", "==", value.number)
+      where("number", "==", data.number)
     );
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
       try {
         const docRef = await addDoc(collection(db, "Profile"), {
-          name: value.name,
-          age: value.age,
-          gender: value.gender,
-          bloodType: value.bloodType,
-          available: value.available,
-          city: value.city,
-          number: value.number,
+          name: data.name,
+          age: data.age,
+          gender: data.gender,
+          bloodType: data.bloodType,
+          available: data.available,
+          city: data.city,
+          number: data.number,
         });
         console.log("Document written with ID: ", docRef.id);
-        setValue({
-          name: "",
-          age: "",
-          gender: "",
-          bloodType: "",
-          city: "",
-          number: "",
-          available: false,
-        });
+        navigate("/donor")
         const Toast = Swal.mixin({
           toast: true,
           position: "top-end",
@@ -126,7 +160,8 @@ export default function Profile() {
         text: "Number already exists",
       });
     }
-    console.log(value);
+
+    // console.log(value);
   };
 
   // const handleSubmit = async (e) => {
@@ -311,49 +346,61 @@ export default function Profile() {
                       Register as Donor
                     </Typography>
 
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit(onSubmit)}>
                       <Grid container spacing={2}>
                         <Grid item xs={12} sm={12}>
                           <TextField
-                            required
                             autoComplete="off"
-                            name="name"
                             fullWidth
+                            name="name"
                             id="name"
                             label="Name"
                             autoFocus
-                            value={value.name}
-                            onChange={(e) =>
-                              setValue({ ...value, name: e.target.value })
-                            }
+                            // value={value.name}
+                            // onChange={(e) =>
+                            //   setValue({ ...value, name: e.target.value })
+                            // }
+                            {...register("name", {
+                              required: "name is required",
+                            })}
                           />
+                          <p className="validate-error">
+                            {errors.name?.message}
+                          </p>
                         </Grid>
                         <Grid item xs={12}>
                           <TextField
                             type="number"
-                            required
                             fullWidth
                             id="age"
                             label="Age"
                             name="age"
                             autoComplete="off"
-                            value={value.age}
-                            onChange={(e) =>
-                              setValue({ ...value, age: e.target.value })
-                            }
+                            // value={value.age}
+                            // onChange={(e) =>
+                            //   setValue({ ...value, age: e.target.value })
+                            // }
+                            {...register("age", {
+                              required: "age is required",
+                            })}
                           />
+                          <p className="validate-error">
+                            {errors.age?.message}
+                          </p>
                         </Grid>
 
                         <Grid item xs={12}>
                           <TextField
-                            required
-                            value={value.city}
-                            onChange={(e) =>
-                              setValue({
-                                ...value,
-                                city: e.target.value,
-                              })
-                            }
+                            // value={value.city}
+                            // onChange={(e) =>
+                            //   setValue({
+                            //     ...value,
+                            //     city: e.target.value,
+                            //   })
+                            // }
+                            {...register("city", {
+                              required: "city is required",
+                            })}
                             id="filled-select-currency-native"
                             select
                             label="City"
@@ -368,10 +415,13 @@ export default function Profile() {
                               return <option key={i}>{e.name}</option>;
                             })}
                           </TextField>
+                          <p className="validate-error">
+                            {" "}
+                            {errors.city?.message}
+                          </p>
                         </Grid>
                         <Grid item xs={12} sm={12}>
                           <TextField
-                            required
                             type="number"
                             autoComplete="off"
                             name="number"
@@ -379,11 +429,17 @@ export default function Profile() {
                             id="number"
                             label="Number"
                             autoFocus
-                            value={value.number}
-                            onChange={(e) =>
-                              setValue({ ...value, number: e.target.value })
-                            }
+                            // value={value.number}
+                            // onChange={(e) =>
+                            //   setValue({ ...value, number: e.target.value })
+                            // }
+                            {...register("number", {
+                              required: "number is required",
+                            })}
                           />
+                          <p className="validate-error">
+                            {errors.number?.message}
+                          </p>
                         </Grid>
                         <Grid item xs={12}>
                           <FormControl>
@@ -391,12 +447,14 @@ export default function Profile() {
                               Gender
                             </FormLabel>
                             <RadioGroup
+                              // value={value.gender}
+
                               aria-labelledby="demo-radio-buttons-group-label"
                               defaultValue="female"
                               name="radio-buttons-group"
-                              onChange={(e) =>
-                                setValue({ ...value, gender: e.target.value })
-                              }
+                              // onChange={(e) =>
+                              //   setValue({ ...value, gender: e.target.value })
+                              // }
                             >
                               <FormControlLabel
                                 value="female"
@@ -422,13 +480,15 @@ export default function Profile() {
                           >
                             <Grid item xs={12}>
                               <TextField
-                                required
-                                onChange={(e) =>
-                                  setValue({
-                                    ...value,
-                                    bloodType: e.target.value,
-                                  })
-                                }
+                                // onChange={(e) =>
+                                //   setValue({
+                                //     ...value,
+                                //     bloodType: e.target.value,
+                                //   })
+                                // }
+                                {...register("bloodType", {
+                                  required: "blood type is required",
+                                })}
                                 id="filled-select-currency-native"
                                 select
                                 label="Blood Group"
@@ -446,18 +506,17 @@ export default function Profile() {
                                 ))}
                               </TextField>
                             </Grid>
+                            <p className="validate-error">
+                              {errors.bloodType?.message}
+                            </p>
                           </Box>
                           <FormGroup>
                             <FormControlLabel
                               control={
                                 <Checkbox
-                                  value={availables}
-                                  onChange={(event) =>
-                                    setValue({
-                                      ...value,
-                                      available: event.target.checked,
-                                    })
-                                  }
+                                  {...register("available", {
+                                    required: "available type is required",
+                                  })}
                                 />
                               }
                               label="Available"
@@ -465,13 +524,24 @@ export default function Profile() {
                           </FormGroup>
                         </Grid>
                       </Grid>
-                      <span className="errorMessage">{errorMessage}</span>
+                      <span className="validate-error">
+                        {errors.available?.message}
+                      </span>
 
                       <Button
                         type="submit"
                         fullWidth
                         variant="contained"
-                        sx={{ mt: 3, mb: 2 }}
+                        sx={{
+                          mt: 3,
+                          mb: 2,
+                          background: "red",
+                          color: "#fff",
+                          "&:hover": {
+                            color: "#fff",
+                            background: "red",
+                          },
+                        }}
                       >
                         updateProfile
                       </Button>

@@ -1,13 +1,21 @@
-import { Box, Link, Paper, TextField } from "@mui/material";
-import { collection, onSnapshot, query } from "firebase/firestore";
+import { Box, Button, Link, Paper, TextField } from "@mui/material";
+import { addDoc, collection, onSnapshot, query } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { db } from "../../firebase/firebase";
 import NavBar from "../navBar/NavBar";
+import { useDonorContext } from "../../context/DonorContext";
+import Modal from "../modal/Modal";
+import Swal from "sweetalert2";
 
 export default function Donor() {
+  // const { toggleModal } = useDonorContext();
+
   const [data, setData] = useState([]);
   const [filterData, setFilterData] = useState([]);
   const [search, setSearch] = useState("");
+  const [Donors, setDonors] = useState("");
+  const [isDisabled, setIsDisabled] = useState(null);
+
   useEffect(() => {
     let unsubscribe = null;
     const getRealTimeData = async () => {
@@ -27,6 +35,42 @@ export default function Donor() {
       unsubscribe();
     };
   }, []);
+  const handleDonorReq = async (index) => {
+    setIsDisabled(true)
+    const donor = data[index];
+    setDonors(donor);
+
+    try {
+      const docRef = await addDoc(collection(db, "DonorReq"), {
+        Donors: Donors,
+      });
+      console.log("Document written with ID: ", docRef.id);
+      setIsDisabled(false)
+      const Toast = Swal.mixin({
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+          toast.addEventListener("mouseenter", Swal.stopTimer);
+          toast.addEventListener("mouseleave", Swal.resumeTimer);
+        },
+      });
+      Toast.fire({
+        icon: "success",
+        title: "Donor request successfully",
+      });
+    } catch (e) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: e,
+      });
+      console.error("Error adding document: ", e);
+    }
+    console.log("🚀 ~ file: Donor.jsx:72 ~ handleDonorReq ~ donor:", donor)
+  };
 
   const handleChange = (e) => {
     const searchInput = e.target.value;
@@ -36,8 +80,8 @@ export default function Donor() {
         (item) =>
           item.name.toLowerCase().includes(searchInput) ||
           item.bloodType.toUpperCase().includes(searchInput)
-
       );
+      console.log("🚀 ~ file: Donor.jsx:48 ~ handleChange ~ data:", data);
       setData(searchData);
     } else {
       setData(filterData);
@@ -56,7 +100,7 @@ export default function Donor() {
             variant="standard"
             value={search}
             onChange={(e) => handleChange(e)}
-            sx={{ mt: "2rem", ml: "30rem", width: "30vw" }}
+            sx={{ mt: "2rem", ml: "40rem", width: "30vw" }}
             label="Search Donor"
           />
         </Box>
@@ -70,11 +114,12 @@ export default function Donor() {
               <th>Contact Number</th>
               <th>City</th>
               <th>Availability</th>
+              <th>Request Donor</th>
             </tr>
           </thead>
           <tbody>
-            {data.map((donor) => (
-              <tr key={donor.id}>
+            {data.map((donor, index) => (
+              <tr key={index}>
                 <td
                   style={{
                     fontWeight: 700,
@@ -118,13 +163,16 @@ export default function Donor() {
                   {donor.city}
                 </td>
                 <td>
-                  <Box sx={{ cursor: "pointer" }}>
+                  <Box>
                     <Link
                       sx={{
                         textDecoration: "none",
                         fontWeight: 700,
                         color: "green",
                         ml: 4,
+                        "&:hover": {
+                          color: "green",
+                        },
                       }}
                     >
                       {donor.available ? (
@@ -135,8 +183,36 @@ export default function Donor() {
                     </Link>
                   </Box>
                 </td>
+
+                <td>
+                  <Box>
+                    <Button
+                      disabled={isDisabled ? true : false}
+                      onClick={() => handleDonorReq(index)}
+                      sx={{
+                        cursor: "pointer",
+                        textTransform: "capitalize",
+                        background: "red",
+                        color: "white",
+
+                        "&:hover": {
+                          color: "#fff ",
+                          backgroundColor: "red !important",
+                          boxShadow: 12,
+                        },
+                        "&:focus": {
+                          color: "#fff",
+                          backgroundColor: "red !important",
+                        },
+                      }}
+                    >
+                      Request Donor
+                    </Button>
+                  </Box>
+                </td>
               </tr>
             ))}
+            {/* <Modal toggleShow={toggleModal} /> */}
           </tbody>
         </table>
       </Paper>
