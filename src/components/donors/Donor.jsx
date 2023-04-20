@@ -19,7 +19,7 @@ export default function Donor() {
   useEffect(() => {
     let unsubscribe = null;
     const getRealTimeData = async () => {
-      const q = query(collection(db, "Profile"));
+      const q = query(collection(db, "FormikUserPro"));
       unsubscribe = onSnapshot(q, (querySnapshot) => {
         const profile = [];
         querySnapshot.forEach((doc) => {
@@ -132,7 +132,7 @@ export default function Donor() {
                     fontWeight: 700,
                   }}
                 >
-                  {donor.bloodType}
+                  {donor.blood}
                 </td>
                 <td
                   style={{
@@ -160,7 +160,7 @@ export default function Donor() {
                     fontWeight: 700,
                   }}
                 >
-                  {donor.city}
+                  {donor.cities}
                 </td>
                 <td>
                   <Box>
